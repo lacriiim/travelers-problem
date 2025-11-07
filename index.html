@@ -1,0 +1,2225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSP Solver - Algorithmes d'Optimisation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0F1419;
+            --yellow-gold: #FFD700;
+            --neon-green: #00FF00;
+            --cyan-light: #00BFFF;
+            --magenta-pink: #FF1493;
+            --text-white: #FFFFFF;
+            --text-gray: #A0A0A0;
+            --grid-dark: #1a2635;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            background: var(--bg-dark);
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-white);
+            background: 
+                linear-gradient(0deg, transparent 24%, rgba(0, 255, 0, 0.05) 25%, rgba(0, 255, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 0, 0.05) 75%, rgba(0, 255, 0, 0.05) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(0, 255, 0, 0.05) 25%, rgba(0, 255, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 0, 0.05) 75%, rgba(0, 255, 0, 0.05) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            background-position: 0 0;
+            background-color: var(--bg-dark);
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(15, 20, 25, 0.8) 100%);
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--yellow-gold), var(--cyan-light), var(--magenta-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-gray);
+            font-weight: 300;
+        }
+
+        .control-panel {
+            background: rgba(26, 38, 53, 0.7);
+            border: 2px solid var(--neon-green);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-item label {
+            color: var(--text-gray);
+            font-weight: 500;
+            min-width: 120px;
+        }
+
+        .control-item input,
+        .control-item select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--cyan-light);
+            color: var(--text-white);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .control-item input:focus,
+        .control-item select:focus {
+            outline: none;
+            border-color: var(--magenta-pink);
+            box-shadow: 0 0 10px rgba(255, 20, 147, 0.5);
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, var(--neon-green), var(--cyan-light));
+            color: var(--bg-dark);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+
+        .algorithms-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .algo-card {
+            background: rgba(26, 38, 53, 0.5);
+            border: 2px solid rgba(0, 191, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .algo-card:hover {
+            border-color: var(--magenta-pink);
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
+        }
+
+        .algo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .algo-title {
+            font-size: 1.3rem;
+            color: var(--cyan-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-simulate,
+        .btn-show-code {
+            background: rgba(0, 191, 255, 0.2);
+            border: 1px solid var(--cyan-light);
+            color: var(--cyan-light);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+
+        .btn-simulate:hover,
+        .btn-show-code:hover {
+            background: rgba(0, 191, 255, 0.4);
+            box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+        }
+
+        .btn-simulate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .algo-parameters {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--magenta-pink);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .param-title {
+            color: var(--magenta-pink);
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .param-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .param-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .param-item label {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+        }
+
+        .param-item input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--neon-green);
+            color: var(--text-white);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .param-item input:focus {
+            outline: none;
+            border-color: var(--magenta-pink);
+            box-shadow: 0 0 8px rgba(255, 20, 147, 0.4);
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--neon-green);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .code-block.active {
+            display: block;
+        }
+
+        .code-block pre {
+            color: var(--neon-green);
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .result-item {
+            background: rgba(0, 255, 0, 0.1);
+            border-left: 3px solid var(--neon-green);
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .result-label {
+            display: block;
+            color: var(--text-gray);
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            display: block;
+            color: var(--neon-green);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .path-display {
+            background: rgba(255, 215, 0, 0.1);
+            border-left: 3px solid var(--yellow-gold);
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .path-display.active {
+            display: block;
+        }
+
+        .path-title {
+            color: var(--yellow-gold);
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .path-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-white);
+        }
+
+        .city-step {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid var(--yellow-gold);
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: var(--yellow-gold);
+            font-weight: 600;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .path-arrow {
+            color: var(--cyan-light);
+            font-weight: bold;
+        }
+
+        .visualization-section {
+            background: rgba(26, 38, 53, 0.7);
+            border: 2px solid var(--cyan-light);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 30px rgba(0, 191, 255, 0.2);
+        }
+
+        .visualization-header {
+            margin-bottom: 20px;
+        }
+
+        .visualization-title {
+            font-size: 1.5rem;
+            color: var(--magenta-pink);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+        }
+
+        .canvas-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .current-route-section {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px dashed var(--neon-green);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 450px;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .current-route-section.active {
+            display: block;
+        }
+
+        .canvas-label {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            background: rgba(26, 38, 53, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            z-index: 10;
+        }
+
+        #currentRouteCanvas {
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 0 auto;
+        }
+
+        .history-section {
+            background: rgba(26, 38, 53, 0.7);
+            border: 2px solid var(--neon-green);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+            display: none;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .history-section.active {
+            display: block;
+        }
+
+        .history-title {
+            font-size: 1.5rem;
+            color: var(--neon-green);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .history-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            border-color: var(--magenta-pink);
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
+            background: rgba(255, 20, 147, 0.05);
+        }
+
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .history-algo-name {
+            color: var(--cyan-light);
+            font-weight: 600;
+        }
+
+        .history-timestamp {
+            color: var(--text-gray);
+            font-size: 0.85rem;
+        }
+
+        .history-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+        }
+
+        .history-stat {
+            background: rgba(0, 191, 255, 0.1);
+            border-left: 2px solid var(--cyan-light);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .history-stat-label {
+            display: block;
+            color: var(--text-gray);
+            font-size: 0.75rem;
+            margin-bottom: 3px;
+        }
+
+        .history-stat-value {
+            display: block;
+            color: var(--neon-green);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .comparison-section {
+            background: rgba(26, 38, 53, 0.7);
+            border: 2px solid var(--magenta-pink);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 30px rgba(255, 20, 147, 0.2);
+        }
+
+        .comparison-title {
+            font-size: 1.5rem;
+            color: var(--magenta-pink);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .comparison-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .comparison-tab {
+            background: rgba(255, 20, 147, 0.2);
+            border: 1px solid var(--magenta-pink);
+            color: var(--magenta-pink);
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comparison-tab:hover,
+        .comparison-tab.active {
+            background: rgba(255, 20, 147, 0.4);
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.5);
+        }
+
+        .chart-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+            min-height: 300px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .chart-container.active {
+            display: block;
+        }
+
+        .chart-container canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .export-section {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, var(--yellow-gold), var(--magenta-pink));
+            color: var(--bg-dark);
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.05rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--text-white);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+                overflow: hidden;
+            }
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 255, 0, 0.9);
+            color: var(--bg-dark);
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .algorithms-section {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-network-wired"></i> Solveur du Problème du Voyageur de Commerce</h1>
+            <p class="subtitle">Comparaison d'Algorithmes d'Optimisation</p>
+        </header>
+
+        <div class="control-panel">
+            <div class="control-group">
+                <div class="control-item">
+                    <label for="cityCount">Nombre de Villes:</label>
+                    <input type="range" id="cityCount" min="5" max="50" value="20" onchange="updateCityCount(this.value)">
+                    <span id="cityCountValue">20</span>
+                </div>
+                <button class="btn-generate" onclick="generateNewCities()">
+                    <i class="fas fa-random"></i>
+                    Générer Nouvelles Villes
+                </button>
+            </div>
+        </div>
+
+        <div class="algorithms-section">
+            <div class="algo-card">
+                <div class="algo-header">
+                    <h2 class="algo-title">
+                        <i class="fas fa-dna"></i>
+                        Algorithme Génétique (Rang)
+                    </h2>
+                    <div class="btn-group">
+                        <button class="btn-simulate" onclick="runSimulation(event, 'genetic-rank')">
+                            <i class="fas fa-play"></i>
+                            Lancer
+                        </button>
+                        <button class="btn-show-code" onclick="toggleCode('genetic-rank')">
+                            <i class="fas fa-code"></i>
+                            Code
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="algo-parameters">
+                    <div class="param-title">
+                        <i class="fas fa-sliders-h"></i>
+                        Paramètres
+                    </div>
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <label>Population</label>
+                            <input type="number" id="param-genetic-rank-pop" value="100" min="10" max="500">
+                        </div>
+                        <div class="param-item">
+                            <label>Générations</label>
+                            <input type="number" id="param-genetic-rank-gen" value="500" min="100" max="2000">
+                        </div>
+                        <div class="param-item">
+                            <label>Taux Mutation</label>
+                            <input type="number" id="param-genetic-rank-mut" value="0.02" min="0.01" max="0.5" step="0.01">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-block" id="code-genetic-rank">
+                    <pre>function geneticAlgorithmRank(params) {
+    const populationSize = params.population;
+    const generations = params.generations;
+    const mutationRate = params.mutationRate;
+    
+    let population = initializePopulation(populationSize);
+    let bestSolution = null;
+    let bestCost = Infinity;
+    
+    for (let gen = 0; gen < generations; gen++) {
+        const fitness = population.map(individual => ({
+            individual,
+            cost: calculateTotalCost(individual),
+            fitness: 0
+        }));
+        
+        fitness.sort((a, b) => a.cost - b.cost);
+        fitness.forEach((item, index) => {
+            item.fitness = populationSize - index;
+        });
+        
+        if (fitness[0].cost < bestCost) {
+            bestCost = fitness[0].cost;
+            bestSolution = [...fitness[0].individual];
+        }
+        
+        const newPopulation = [];
+        const eliteCount = Math.floor(populationSize * 0.1);
+        for (let i = 0; i < eliteCount; i++) {
+            newPopulation.push([...fitness[i].individual]);
+        }
+        
+        while (newPopulation.length < populationSize) {
+            const parent1 = rankSelection(fitness);
+            const parent2 = rankSelection(fitness);
+            let child = crossover(parent1, parent2);
+            
+            if (Math.random() < mutationRate) {
+                child = mutate(child);
+            }
+            
+            newPopulation.push(child);
+        }
+        
+        population = newPopulation;
+    }
+    
+    return { path: bestSolution, cost: bestCost, iterations: generations };
+}</pre>
+                </div>
+                <div class="results" id="results-genetic-rank" style="display: none;">
+                    <div class="result-item">
+                        <span class="result-label">💰 Coût Total</span>
+                        <span class="result-value" id="cost-genetic-rank">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">⏱️ Temps d'Exécution</span>
+                        <span class="result-value" id="time-genetic-rank">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">🔄 Itérations</span>
+                        <span class="result-value" id="iterations-genetic-rank">-</span>
+                    </div>
+                </div>
+                <div class="path-display" id="path-genetic-rank" style="display: none;">
+                    <div class="path-title">
+                        <i class="fas fa-route"></i>
+                        Parcours Optimal
+                    </div>
+                    <div class="path-content" id="path-content-genetic-rank"></div>
+                </div>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-header">
+                    <h2 class="algo-title">
+                        <i class="fas fa-dna"></i>
+                        Algorithme Génétique (Roulette)
+                    </h2>
+                    <div class="btn-group">
+                        <button class="btn-simulate" onclick="runSimulation(event, 'genetic-roulette')">
+                            <i class="fas fa-play"></i>
+                            Lancer
+                        </button>
+                        <button class="btn-show-code" onclick="toggleCode('genetic-roulette')">
+                            <i class="fas fa-code"></i>
+                            Code
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="algo-parameters">
+                    <div class="param-title">
+                        <i class="fas fa-sliders-h"></i>
+                        Paramètres
+                    </div>
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <label>Population</label>
+                            <input type="number" id="param-genetic-roulette-pop" value="100" min="10" max="500">
+                        </div>
+                        <div class="param-item">
+                            <label>Générations</label>
+                            <input type="number" id="param-genetic-roulette-gen" value="500" min="100" max="2000">
+                        </div>
+                        <div class="param-item">
+                            <label>Taux Mutation</label>
+                            <input type="number" id="param-genetic-roulette-mut" value="0.02" min="0.01" max="0.5" step="0.01">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-block" id="code-genetic-roulette">
+                    <pre>function geneticAlgorithmRoulette(params) {
+    const populationSize = params.population;
+    const generations = params.generations;
+    const mutationRate = params.mutationRate;
+
+    let population = initializePopulation(populationSize);
+    let bestSolution = null;
+    let bestCost = Infinity;
+
+    for (let gen = 0; gen < generations; gen++) {
+        const fitness = population.map(individual => {
+            const cost = calculateTotalCost(individual);
+            return {
+                individual,
+                cost,
+                fitness: 1 / (cost + 1)
+            };
+        });
+
+        const currentBest = fitness.reduce((best, current) => 
+            current.cost < best.cost ? current : best
+        );
+
+        if (currentBest.cost < bestCost) {
+            bestCost = currentBest.cost;
+            bestSolution = [...currentBest.individual];
+        }
+
+        const newPopulation = [];
+        const eliteCount = Math.floor(populationSize * 0.1);
+        const sortedFitness = [...fitness].sort((a, b) => a.cost - b.cost);
+        for (let i = 0; i < eliteCount; i++) {
+            newPopulation.push([...sortedFitness[i].individual]);
+        }
+
+        while (newPopulation.length < populationSize) {
+            const parent1 = rouletteSelection(fitness);
+            const parent2 = rouletteSelection(fitness);
+            let child = crossover(parent1, parent2);
+
+            if (Math.random() < mutationRate) {
+                child = mutate(child);
+            }
+
+            newPopulation.push(child);
+        }
+
+        population = newPopulation;
+    }
+
+    return {
+        path: bestSolution,
+        cost: bestCost,
+        iterations: generations
+    };
+}</pre>
+                </div>
+                <div class="results" id="results-genetic-roulette" style="display: none;">
+                    <div class="result-item">
+                        <span class="result-label">💰 Coût Total</span>
+                        <span class="result-value" id="cost-genetic-roulette">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">⏱️ Temps d'Exécution</span>
+                        <span class="result-value" id="time-genetic-roulette">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">🔄 Itérations</span>
+                        <span class="result-value" id="iterations-genetic-roulette">-</span>
+                    </div>
+                </div>
+                <div class="path-display" id="path-genetic-roulette" style="display: none;">
+                    <div class="path-title">
+                        <i class="fas fa-route"></i>
+                        Parcours Optimal
+                    </div>
+                    <div class="path-content" id="path-content-genetic-roulette"></div>
+                </div>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-header">
+                    <h2 class="algo-title">
+                        <i class="fas fa-fire"></i>
+                        Recuit Simulé
+                    </h2>
+                    <div class="btn-group">
+                        <button class="btn-simulate" onclick="runSimulation(event, 'simulated-annealing')">
+                            <i class="fas fa-play"></i>
+                            Lancer
+                        </button>
+                        <button class="btn-show-code" onclick="toggleCode('simulated-annealing')">
+                            <i class="fas fa-code"></i>
+                            Code
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="algo-parameters">
+                    <div class="param-title">
+                        <i class="fas fa-sliders-h"></i>
+                        Paramètres
+                    </div>
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <label>Température Initiale</label>
+                            <input type="number" id="param-simulated-annealing-temp" value="1000" min="100" max="5000">
+                        </div>
+                        <div class="param-item">
+                            <label>Taux Refroidissement</label>
+                            <input type="number" id="param-simulated-annealing-cool" value="0.995" min="0.9" max="0.999" step="0.001">
+                        </div>
+                        <div class="param-item">
+                            <label>Température Minimale</label>
+                            <input type="number" id="param-simulated-annealing-min" value="0.1" min="0.01" max="1" step="0.01">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-block" id="code-simulated-annealing">
+                    <pre>function simulatedAnnealing(params) {
+    let currentSolution = Array.from({length: cities.length}, (_, i) => i);
+    currentSolution = shuffle(currentSolution);
+    let currentCost = calculateTotalCost(currentSolution);
+
+    let bestSolution = [...currentSolution];
+    let bestCost = currentCost;
+
+    let temperature = params.initialTemp;
+    const coolingRate = params.coolingRate;
+    const minTemperature = params.minTemp;
+    let iterations = 0;
+
+    while (temperature > minTemperature) {
+        const newSolution = [...currentSolution];
+        const i = Math.floor(Math.random() * newSolution.length);
+        const j = Math.floor(Math.random() * newSolution.length);
+        [newSolution[i], newSolution[j]] = [newSolution[j], newSolution[i]];
+
+        const newCost = calculateTotalCost(newSolution);
+        const delta = newCost - currentCost;
+
+        if (delta < 0 || Math.random() < Math.exp(-delta / temperature)) {
+            currentSolution = newSolution;
+            currentCost = newCost;
+
+            if (currentCost < bestCost) {
+                bestSolution = [...currentSolution];
+                bestCost = currentCost;
+            }
+        }
+
+        temperature *= coolingRate;
+        iterations++;
+    }
+
+    return {
+        path: bestSolution,
+        cost: bestCost,
+        iterations
+    };
+}</pre>
+                </div>
+                <div class="results" id="results-simulated-annealing" style="display: none;">
+                    <div class="result-item">
+                        <span class="result-label">💰 Coût Total</span>
+                        <span class="result-value" id="cost-simulated-annealing">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">⏱️ Temps d'Exécution</span>
+                        <span class="result-value" id="time-simulated-annealing">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">🔄 Itérations</span>
+                        <span class="result-value" id="iterations-simulated-annealing">-</span>
+                    </div>
+                </div>
+                <div class="path-display" id="path-simulated-annealing" style="display: none;">
+                    <div class="path-title">
+                        <i class="fas fa-route"></i>
+                        Parcours Optimal
+                    </div>
+                    <div class="path-content" id="path-content-simulated-annealing"></div>
+                </div>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-header">
+                    <h2 class="algo-title">
+                        <i class="fas fa-ban"></i>
+                        Recherche Tabou
+                    </h2>
+                    <div class="btn-group">
+                        <button class="btn-simulate" onclick="runSimulation(event, 'tabu-search')">
+                            <i class="fas fa-play"></i>
+                            Lancer
+                        </button>
+                        <button class="btn-show-code" onclick="toggleCode('tabu-search')">
+                            <i class="fas fa-code"></i>
+                            Code
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="algo-parameters">
+                    <div class="param-title">
+                        <i class="fas fa-sliders-h"></i>
+                        Paramètres
+                    </div>
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <label>Itérations</label>
+                            <input type="number" id="param-tabu-search-iter" value="1000" min="100" max="5000">
+                        </div>
+                        <div class="param-item">
+                            <label>Durée Tabou</label>
+                            <input type="number" id="param-tabu-search-tenure" value="20" min="5" max="100">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-block" id="code-tabu-search">
+                    <pre>function tabuSearch(params) {
+    let currentSolution = Array.from({length: cities.length}, (_, i) => i);
+    currentSolution = shuffle(currentSolution);
+    let currentCost = calculateTotalCost(currentSolution);
+    
+    let bestSolution = [...currentSolution];
+    let bestCost = currentCost;
+    
+    const tabuList = [];
+    const tabuTenure = params.tabuTenure;
+    const maxIterations = params.maxIterations;
+    
+    for (let iter = 0; iter < maxIterations; iter++) {
+        let bestNeighbor = null;
+        let bestNeighborCost = Infinity;
+        let bestMove = null;
+        
+        for (let i = 0; i < currentSolution.length - 1; i++) {
+            for (let j = i + 1; j < currentSolution.length; j++) {
+                const neighbor = [...currentSolution];
+                [neighbor[i], neighbor[j]] = [neighbor[j], neighbor[i]];
+                const neighborCost = calculateTotalCost(neighbor);
+                
+                const move = `${i}-${j}`;
+                const isTabu = tabuList.includes(move);
+                
+                if ((!isTabu || neighborCost < bestCost) && 
+                    neighborCost < bestNeighborCost) {
+                    bestNeighbor = neighbor;
+                    bestNeighborCost = neighborCost;
+                    bestMove = move;
+                }
+            }
+        }
+        
+        if (bestNeighbor) {
+            currentSolution = bestNeighbor;
+            currentCost = bestNeighborCost;
+            
+            tabuList.push(bestMove);
+            if (tabuList.length > tabuTenure) {
+                tabuList.shift();
+            }
+            
+            if (currentCost < bestCost) {
+                bestSolution = [...currentSolution];
+                bestCost = currentCost;
+            }
+        }
+    }
+    
+    return { path: bestSolution, cost: bestCost, iterations: maxIterations };
+}</pre>
+                </div>
+                <div class="results" id="results-tabu-search" style="display: none;">
+                    <div class="result-item">
+                        <span class="result-label">💰 Coût Total</span>
+                        <span class="result-value" id="cost-tabu-search">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">⏱️ Temps d'Exécution</span>
+                        <span class="result-value" id="time-tabu-search">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">🔄 Itérations</span>
+                        <span class="result-value" id="iterations-tabu-search">-</span>
+                    </div>
+                </div>
+                <div class="path-display" id="path-tabu-search" style="display: none;">
+                    <div class="path-title">
+                        <i class="fas fa-route"></i>
+                        Parcours Optimal
+                    </div>
+                    <div class="path-content" id="path-content-tabu-search"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visualization-section">
+            <div class="visualization-header">
+                <h2 class="visualization-title">
+                    <i class="fas fa-map-marked-alt"></i>
+                    Visualisation du Parcours Actuel
+                </h2>
+            </div>
+            <div class="canvas-container">
+                <div class="current-route-section" id="current-route">
+                    <div class="canvas-label" id="current-route-label">Sélectionnez un algorithme</div>
+                    <canvas id="currentRouteCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-section" id="history-section">
+            <h2 class="history-title">
+                <i class="fas fa-history"></i>
+                Historique des Parcours
+            </h2>
+            <div class="history-grid" id="history-grid"></div>
+        </div>
+
+        <div class="comparison-section">
+            <h2 class="comparison-title">
+                <i class="fas fa-chart-bar"></i>
+                Comparaison des Algorithmes
+            </h2>
+            <div class="comparison-tabs">
+                <div class="comparison-tab active" onclick="switchComparisonTab('cost')">
+                    <i class="fas fa-dollar-sign"></i> Coût Total
+                </div>
+                <div class="comparison-tab" onclick="switchComparisonTab('time')">
+                    <i class="fas fa-clock"></i> Temps d'Exécution
+                </div>
+            </div>
+            <div class="chart-container active" id="chart-cost">
+                <canvas id="comparisonChartCost"></canvas>
+            </div>
+            <div class="chart-container" id="chart-time">
+                <canvas id="comparisonChartTime"></canvas>
+            </div>
+        </div>
+
+        <div class="export-section">
+            <button class="btn-export" onclick="exportResults()">
+                <i class="fas fa-download"></i>
+                Exporter les Résultats (CSV)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let cities = [];
+        let currentCityCount = 20;
+        let algorithmResults = {};
+        let comparisonChartCost = null;
+        let comparisonChartTime = null;
+        let routeHistory = [];
+        let currentDisplayedRoute = null;
+        let animationFrameId = null;
+        const ANIMATION_DELAY = 50;
+
+        function showNotification(message, duration = 3000) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
+
+        function toggleCode(algoId) {
+            const codeBlock = document.getElementById(`code-${algoId}`);
+            codeBlock.classList.toggle('active');
+        }
+
+        function initializeCanvas(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (canvas) {
+                requestAnimationFrame(() => {
+                    const container = canvas.parentElement;
+                    canvas.width = Math.max(container.clientWidth - 40, 600);
+                    canvas.height = 400;
+                });
+            }
+        }
+
+        function generateRandomCities(count = currentCityCount) {
+            cities = [];
+            const padding = 50;
+            const width = 800 - 2 * padding;
+            const height = 400 - 2 * padding;
+
+            for (let i = 0; i < count; i++) {
+                cities.push({
+                    id: i,
+                    name: `Ville ${i + 1}`,
+                    x: padding + Math.random() * width,
+                    y: padding + Math.random() * height
+                });
+            }
+
+            showNotification(`${count} villes générées avec succès!`);
+        }
+
+        function updateCityCount(value) {
+            currentCityCount = parseInt(value);
+            document.getElementById('cityCountValue').textContent = value;
+        }
+
+        function generateNewCities() {
+            generateRandomCities(currentCityCount);
+            algorithmResults = {};
+            routeHistory = [];
+            currentDisplayedRoute = null;
+            
+            document.querySelectorAll('.results').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.path-display').forEach(el => el.style.display = 'none');
+            document.getElementById('current-route').classList.remove('active');
+            document.getElementById('history-section').classList.remove('active');
+            document.getElementById('history-grid').innerHTML = '';
+            
+            if (comparisonChartCost) {
+                comparisonChartCost.destroy();
+                comparisonChartCost = null;
+            }
+            if (comparisonChartTime) {
+                comparisonChartTime.destroy();
+                comparisonChartTime = null;
+            }
+        }
+
+        function calculateDistance(city1, city2) {
+            const dx = city1.x - city2.x;
+            const dy = city1.y - city2.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function calculateTotalCost(path) {
+            let totalCost = 0;
+            for (let i = 0; i < path.length - 1; i++) {
+                totalCost += calculateDistance(cities[path[i]], cities[path[i + 1]]);
+            }
+            totalCost += calculateDistance(cities[path[path.length - 1]], cities[path[0]]);
+            return totalCost;
+        }
+
+        function drawCitiesAnimated(canvasId, path, callback) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                console.error('[v0] Canvas element not found:', canvasId);
+                if (callback) callback();
+                return;
+            }
+            
+            if (!path || path.length === 0) {
+                console.error('[v0] Invalid path provided to drawCitiesAnimated');
+                if (callback) callback();
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error('[v0] Could not get canvas context');
+                if (callback) callback();
+                return;
+            }
+
+            let step = 0;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw completed segments
+                if (step > 0) {
+                    ctx.strokeStyle = '#00BFFF';
+                    ctx.lineWidth = 3;
+                    ctx.globalAlpha = 0.7;
+                    
+                    for (let i = 0; i < Math.min(step, path.length); i++) {
+                        const current = cities[path[i]];
+                        const next = cities[path[(i + 1) % path.length]];
+                        
+                        if (current && next) {
+                            ctx.beginPath();
+                            ctx.moveTo(current.x, current.y);
+                            ctx.lineTo(next.x, next.y);
+                            ctx.stroke();
+                            
+                            drawArrow(ctx, current.x, current.y, next.x, next.y);
+                        }
+                    }
+                }
+                
+                ctx.globalAlpha = 1;
+                
+                // Draw all cities
+                cities.forEach((city, index) => {
+                    if (!city) return;
+                    
+                    ctx.beginPath();
+                    ctx.arc(city.x, city.y, 8, 0, 2 * Math.PI);
+                    
+                    if (path && index === path[0]) {
+                        ctx.fillStyle = '#FFD700';
+                    } else if (step > path.indexOf(index)) {
+                        ctx.fillStyle = '#00FF00';
+                    } else {
+                        ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+                    }
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = 'bold 11px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(city.id + 1, city.x, city.y - 15);
+                });
+                
+                step++;
+                
+                if (step <= path.length) {
+                    animationFrameId = setTimeout(animate, ANIMATION_DELAY);
+                } else if (callback) {
+                    callback();
+                }
+            }
+            
+            if (animationFrameId) {
+                clearTimeout(animationFrameId);
+            }
+            
+            animate();
+        }
+
+        function drawCitiesStatic(canvasId, path) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || !path || path.length === 0) {
+                console.error('[v0] Canvas or path is invalid', canvasId, path);
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (path && path.length > 0) {
+                ctx.strokeStyle = '#00BFFF';
+                ctx.lineWidth = 3;
+                ctx.globalAlpha = 0.7;
+
+                ctx.beginPath();
+                const firstCity = cities[path[0]];
+                if (firstCity) {
+                    ctx.moveTo(firstCity.x, firstCity.y);
+
+                    for (let i = 1; i < path.length; i++) {
+                        const city = cities[path[i]];
+                        if (city) {
+                            ctx.lineTo(city.x, city.y);
+                        }
+                    }
+                    ctx.lineTo(firstCity.x, firstCity.y);
+                    ctx.stroke();
+                }
+
+                ctx.globalAlpha = 1;
+                for (let i = 0; i < path.length; i++) {
+                    const current = cities[path[i]];
+                    const next = cities[path[(i + 1) % path.length]];
+                    if (current && next) {
+                        drawArrow(ctx, current.x, current.y, next.x, next.y);
+                    }
+                }
+            }
+
+            ctx.globalAlpha = 1;
+            cities.forEach((city, index) => {
+                if (!city) return;
+                
+                ctx.beginPath();
+                ctx.arc(city.x, city.y, 8, 0, 2 * Math.PI);
+
+                if (path && index === path[0]) {
+                    ctx.fillStyle = '#FFD700';
+                } else {
+                    ctx.fillStyle = '#00FF00';
+                }
+                ctx.fill();
+
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(city.id + 1, city.x, city.y - 15);
+            });
+        }
+
+        function drawArrow(ctx, fromX, fromY, toX, toY) {
+            const headLength = 10;
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const angle = Math.atan2(dy, dx);
+
+            const midX = fromX + dx * 0.5;
+            const midY = fromY + dy * 0.5;
+
+            ctx.strokeStyle = '#FFD700';
+            ctx.fillStyle = '#FFD700';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(midX, midY);
+            ctx.lineTo(
+                midX - headLength * Math.cos(angle - Math.PI / 6),
+                midY - headLength * Math.sin(angle - Math.PI / 6)
+            );
+            ctx.moveTo(midX, midY);
+            ctx.lineTo(
+                midX - headLength * Math.cos(angle + Math.PI / 6),
+                midY - headLength * Math.sin(angle + Math.PI / 6)
+            );
+            ctx.stroke();
+        }
+
+        function displayPath(algoId, path) {
+            const pathContainer = document.getElementById(`path-content-${algoId}`);
+            pathContainer.innerHTML = '';
+
+            path.forEach((cityIndex, step) => {
+                const cityStep = document.createElement('span');
+                cityStep.className = 'city-step';
+                cityStep.textContent = `${cityIndex + 1}`;
+                cityStep.style.animationDelay = `${step * 0.05}s`;
+                pathContainer.appendChild(cityStep);
+
+                if (step < path.length - 1) {
+                    const arrow = document.createElement('span');
+                    arrow.className = 'path-arrow';
+                    arrow.innerHTML = '→';
+                    pathContainer.appendChild(arrow);
+                }
+            });
+
+            const returnArrow = document.createElement('span');
+            returnArrow.className = 'path-arrow';
+            returnArrow.innerHTML = '→';
+            pathContainer.appendChild(returnArrow);
+
+            const returnStep = document.createElement('span');
+            returnStep.className = 'city-step';
+            returnStep.textContent = `${path[0] + 1}`;
+            returnStep.style.animationDelay = `${path.length * 0.05}s`;
+            pathContainer.appendChild(returnStep);
+
+            document.getElementById(`path-${algoId}`).style.display = 'block';
+        }
+
+        function getAlgorithmParams(algoId) {
+            if (algoId === 'genetic-rank' || algoId === 'genetic-roulette') {
+                const prefix = `param-${algoId}`;
+                return {
+                    population: parseInt(document.getElementById(`${prefix}-pop`).value),
+                    generations: parseInt(document.getElementById(`${prefix}-gen`).value),
+                    mutationRate: parseFloat(document.getElementById(`${prefix}-mut`).value)
+                };
+            } else if (algoId === 'simulated-annealing') {
+                const prefix = `param-${algoId}`;
+                return {
+                    initialTemp: parseFloat(document.getElementById(`${prefix}-temp`).value),
+                    coolingRate: parseFloat(document.getElementById(`${prefix}-cool`).value),
+                    minTemp: parseFloat(document.getElementById(`${prefix}-min`).value)
+                };
+            } else if (algoId === 'tabu-search') {
+                const prefix = `param-${algoId}`;
+                return {
+                    maxIterations: parseInt(document.getElementById(`${prefix}-iter`).value),
+                    tabuTenure: parseInt(document.getElementById(`${prefix}-tenure`).value)
+                };
+            }
+            return {};
+        }
+
+        function geneticAlgorithmRank(params) {
+            const populationSize = params.population;
+            const generations = params.generations;
+            const mutationRate = params.mutationRate;
+
+            let population = initializePopulation(populationSize);
+            let bestSolution = null;
+            let bestCost = Infinity;
+
+            for (let gen = 0; gen < generations; gen++) {
+                const fitness = population.map(individual => ({
+                    individual,
+                    cost: calculateTotalCost(individual),
+                    fitness: 0
+                }));
+
+                fitness.sort((a, b) => a.cost - b.cost);
+                fitness.forEach((item, index) => {
+                    item.fitness = populationSize - index;
+                });
+
+                if (fitness[0].cost < bestCost) {
+                    bestCost = fitness[0].cost;
+                    bestSolution = [...fitness[0].individual];
+                }
+
+                const newPopulation = [];
+                const eliteCount = Math.floor(populationSize * 0.1);
+                for (let i = 0; i < eliteCount; i++) {
+                    newPopulation.push([...fitness[i].individual]);
+                }
+
+                while (newPopulation.length < populationSize) {
+                    const parent1 = rankSelection(fitness);
+                    const parent2 = rankSelection(fitness);
+                    let child = crossover(parent1, parent2);
+
+                    if (Math.random() < mutationRate) {
+                        child = mutate(child);
+                    }
+
+                    newPopulation.push(child);
+                }
+
+                population = newPopulation;
+            }
+
+            return {
+                path: bestSolution,
+                cost: bestCost,
+                iterations: generations
+            };
+        }
+
+        function geneticAlgorithmRoulette(params) {
+            const populationSize = params.population;
+            const generations = params.generations;
+            const mutationRate = params.mutationRate;
+
+            let population = initializePopulation(populationSize);
+            let bestSolution = null;
+            let bestCost = Infinity;
+
+            for (let gen = 0; gen < generations; gen++) {
+                const fitness = population.map(individual => {
+                    const cost = calculateTotalCost(individual);
+                    return {
+                        individual,
+                        cost,
+                        fitness: 1 / (cost + 1)
+                    };
+                });
+
+                const currentBest = fitness.reduce((best, current) => 
+                    current.cost < best.cost ? current : best
+                );
+
+                if (currentBest.cost < bestCost) {
+                    bestCost = currentBest.cost;
+                    bestSolution = [...currentBest.individual];
+                }
+
+                const newPopulation = [];
+                const eliteCount = Math.floor(populationSize * 0.1);
+                const sortedFitness = [...fitness].sort((a, b) => a.cost - b.cost);
+                for (let i = 0; i < eliteCount; i++) {
+                    newPopulation.push([...sortedFitness[i].individual]);
+                }
+
+                while (newPopulation.length < populationSize) {
+                    const parent1 = rouletteSelection(fitness);
+                    const parent2 = rouletteSelection(fitness);
+                    let child = crossover(parent1, parent2);
+
+                    if (Math.random() < mutationRate) {
+                        child = mutate(child);
+                    }
+
+                    newPopulation.push(child);
+                }
+
+                population = newPopulation;
+            }
+
+            return {
+                path: bestSolution,
+                cost: bestCost,
+                iterations: generations
+            };
+        }
+
+        function simulatedAnnealing(params) {
+            let currentSolution = Array.from({length: cities.length}, (_, i) => i);
+            currentSolution = shuffle(currentSolution);
+            let currentCost = calculateTotalCost(currentSolution);
+
+            let bestSolution = [...currentSolution];
+            let bestCost = currentCost;
+
+            let temperature = params.initialTemp;
+            const coolingRate = params.coolingRate;
+            const minTemperature = params.minTemp;
+            let iterations = 0;
+
+            while (temperature > minTemperature) {
+                const newSolution = [...currentSolution];
+                const i = Math.floor(Math.random() * newSolution.length);
+                const j = Math.floor(Math.random() * newSolution.length);
+                [newSolution[i], newSolution[j]] = [newSolution[j], newSolution[i]];
+
+                const newCost = calculateTotalCost(newSolution);
+                const delta = newCost - currentCost;
+
+                if (delta < 0 || Math.random() < Math.exp(-delta / temperature)) {
+                    currentSolution = newSolution;
+                    currentCost = newCost;
+
+                    if (currentCost < bestCost) {
+                        bestSolution = [...currentSolution];
+                        bestCost = currentCost;
+                    }
+                }
+
+                temperature *= coolingRate;
+                iterations++;
+            }
+
+            return {
+                path: bestSolution,
+                cost: bestCost,
+                iterations
+            };
+        }
+
+        function tabuSearch(params) {
+            let currentSolution = Array.from({length: cities.length}, (_, i) => i);
+            currentSolution = shuffle(currentSolution);
+            let currentCost = calculateTotalCost(currentSolution);
+
+            let bestSolution = [...currentSolution];
+            let bestCost = currentCost;
+
+            const tabuList = [];
+            const tabuTenure = params.tabuTenure;
+            const maxIterations = params.maxIterations;
+
+            for (let iter = 0; iter < maxIterations; iter++) {
+                let bestNeighbor = null;
+                let bestNeighborCost = Infinity;
+                let bestMove = null;
+
+                for (let i = 0; i < currentSolution.length - 1; i++) {
+                    for (let j = i + 1; j < currentSolution.length; j++) {
+                        const neighbor = [...currentSolution];
+                        [neighbor[i], neighbor[j]] = [neighbor[j], neighbor[i]];
+                        const neighborCost = calculateTotalCost(neighbor);
+
+                        const move = `${i}-${j}`;
+                        const isTabu = tabuList.includes(move);
+
+                        if ((!isTabu || neighborCost < bestCost) && neighborCost < bestNeighborCost) {
+                            bestNeighbor = neighbor;
+                            bestNeighborCost = neighborCost;
+                            bestMove = move;
+                        }
+                    }
+                }
+
+                if (bestNeighbor) {
+                    currentSolution = bestNeighbor;
+                    currentCost = bestNeighborCost;
+
+                    tabuList.push(bestMove);
+                    if (tabuList.length > tabuTenure) {
+                        tabuList.shift();
+                    }
+
+                    if (currentCost < bestCost) {
+                        bestSolution = [...currentSolution];
+                        bestCost = currentCost;
+                    }
+                }
+            }
+
+            return {
+                path: bestSolution,
+                cost: bestCost,
+                iterations: maxIterations
+            };
+        }
+
+        function initializePopulation(size) {
+            const population = [];
+            for (let i = 0; i < size; i++) {
+                const individual = Array.from({length: cities.length}, (_, i) => i);
+                population.push(shuffle(individual));
+            }
+            return population;
+        }
+
+        function rankSelection(fitness) {
+            const totalFitness = fitness.reduce((sum, item) => sum + item.fitness, 0);
+            let random = Math.random() * totalFitness;
+
+            for (const item of fitness) {
+                random -= item.fitness;
+                if (random <= 0) {
+                    return [...item.individual];
+                }
+            }
+
+            return [...fitness[0].individual];
+        }
+
+        function rouletteSelection(fitness) {
+            const totalFitness = fitness.reduce((sum, item) => sum + item.fitness, 0);
+            let random = Math.random() * totalFitness;
+
+            for (const item of fitness) {
+                random -= item.fitness;
+                if (random <= 0) {
+                    return [...item.individual];
+                }
+            }
+
+            return [...fitness[0].individual];
+        }
+
+        function crossover(parent1, parent2) {
+            const start = Math.floor(Math.random() * parent1.length);
+            const end = Math.floor(Math.random() * (parent1.length - start)) + start;
+
+            const child = new Array(parent1.length).fill(-1);
+
+            for (let i = start; i <= end; i++) {
+                child[i] = parent1[i];
+            }
+
+            let currentPos = (end + 1) % parent1.length;
+            for (let i = 0; i < parent2.length; i++) {
+                const city = parent2[(end + 1 + i) % parent2.length];
+                if (!child.includes(city)) {
+                    child[currentPos] = city;
+                    currentPos = (currentPos + 1) % parent1.length;
+                }
+            }
+
+            return child;
+        }
+
+        function mutate(individual) {
+            const mutated = [...individual];
+            const i = Math.floor(Math.random() * mutated.length);
+            const j = Math.floor(Math.random() * mutated.length);
+            [mutated[i], mutated[j]] = [mutated[j], mutated[i]];
+            return mutated;
+        }
+
+        function shuffle(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function addToHistory(algoId, result, executionTime, params) {
+            const labels = {
+                'genetic-rank': 'Génétique (Rang)',
+                'genetic-roulette': 'Génétique (Roulette)',
+                'simulated-annealing': 'Recuit Simulé',
+                'tabu-search': 'Recherche Tabou'
+            };
+
+            const historyItem = {
+                id: Date.now(),
+                algoId: algoId,
+                algoName: labels[algoId],
+                timestamp: new Date().toLocaleString('fr-FR'),
+                cost: result.cost,
+                time: executionTime,
+                iterations: result.iterations,
+                path: result.path,
+                cities: JSON.parse(JSON.stringify(cities)),
+                params: params
+            };
+
+            routeHistory.unshift(historyItem);
+            
+            if (routeHistory.length > 20) {
+                routeHistory = routeHistory.slice(0, 20);
+            }
+
+            updateHistoryDisplay();
+        }
+
+        function updateHistoryDisplay() {
+            const historyGrid = document.getElementById('history-grid');
+            const historySection = document.getElementById('history-section');
+
+            if (routeHistory.length > 0) {
+                historySection.classList.add('active');
+                historyGrid.innerHTML = '';
+
+                routeHistory.forEach(item => {
+                    const historyItemEl = document.createElement('div');
+                    historyItemEl.className = 'history-item';
+                    historyItemEl.onclick = () => displayHistoryRoute(item);
+
+                    historyItemEl.innerHTML = `
+                        <div class="history-item-header">
+                            <span class="history-algo-name">${item.algoName}</span>
+                            <span class="history-timestamp">${item.timestamp}</span>
+                        </div>
+                        <div class="history-stats">
+                            <div class="history-stat">
+                                <span class="history-stat-label">Coût:</span>
+                                <span class="history-stat-value">${item.cost.toFixed(2)} px</span>
+                            </div>
+                            <div class="history-stat">
+                                <span class="history-stat-label">Temps:</span>
+                                <span class="history-stat-value">${item.time} ms</span>
+                            </div>
+                            <div class="history-stat">
+                                <span class="history-stat-label">Itérations:</span>
+                                <span class="history-stat-value">${item.iterations}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    historyGrid.appendChild(historyItemEl);
+                });
+            }
+        }
+
+        function displayHistoryRoute(historyItem) {
+            if (!historyItem || !historyItem.path || !historyItem.cities) {
+                showNotification('Erreur: données d\'historique invalides');
+                return;
+            }
+            
+            currentDisplayedRoute = historyItem;
+            
+            const savedCities = JSON.parse(JSON.stringify(cities));
+            cities = JSON.parse(JSON.stringify(historyItem.cities));
+            
+            const currentRoute = document.getElementById('current-route');
+            const currentRouteLabel = document.getElementById('current-route-label');
+            
+            currentRoute.classList.add('active');
+            currentRouteLabel.textContent = `${historyItem.algoName} - ${historyItem.timestamp}`;
+            
+            initializeCanvas('currentRouteCanvas');
+            
+            drawCitiesAnimated('currentRouteCanvas', historyItem.path, () => {
+                cities = savedCities;
+            });
+
+            showNotification(`Affichage du parcours: ${historyItem.algoName}`);
+        }
+
+        async function runSimulation(event, algoId) {
+            if (cities.length === 0) {
+                showNotification('Veuillez générer des villes d\'abord!');
+                return;
+            }
+
+            const button = event.target.closest('.btn-simulate');
+            const originalContent = button.innerHTML;
+
+            button.disabled = true;
+            button.innerHTML = '<div class="spinner"></div> En cours...';
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            try {
+                const params = getAlgorithmParams(algoId);
+                const startTime = performance.now();
+                let result;
+
+                switch(algoId) {
+                    case 'genetic-rank':
+                        result = geneticAlgorithmRank(params);
+                        break;
+                    case 'genetic-roulette':
+                        result = geneticAlgorithmRoulette(params);
+                        break;
+                    case 'simulated-annealing':
+                        result = simulatedAnnealing(params);
+                        break;
+                    case 'tabu-search':
+                        result = tabuSearch(params);
+                        break;
+                }
+
+                const endTime = performance.now();
+                const executionTime = (endTime - startTime).toFixed(2);
+
+                // Validate result
+                if (!result || !result.path || result.path.length === 0) {
+                    throw new Error('Algorithme n\'a pas retourné de résultat valide');
+                }
+
+                algorithmResults[algoId] = {
+                    cost: result.cost,
+                    time: executionTime,
+                    iterations: result.iterations,
+                    path: result.path,
+                    params: params
+                };
+
+                document.getElementById(`cost-${algoId}`).textContent = `${result.cost.toFixed(2)} px`;
+                document.getElementById(`time-${algoId}`).textContent = `${executionTime} ms`;
+                document.getElementById(`iterations-${algoId}`).textContent = result.iterations;
+                document.getElementById(`results-${algoId}`).style.display = 'block';
+
+                displayPath(algoId, result.path);
+                
+                addToHistory(algoId, result, executionTime, params);
+                
+                const currentRoute = document.getElementById('current-route');
+                const currentRouteLabel = document.getElementById('current-route-label');
+                
+                const labels = {
+                    'genetic-rank': '🧬 Génétique (Rang)',
+                    'genetic-roulette': '🧬 Génétique (Roulette)',
+                    'simulated-annealing': '🔥 Recuit Simulé',
+                    'tabu-search': '🚫 Recherche Tabou'
+                };
+                
+                currentRoute.classList.add('active');
+                currentRouteLabel.textContent = labels[algoId];
+                
+                initializeCanvas('currentRouteCanvas');
+                
+                setTimeout(() => {
+                    const canvas = document.getElementById('currentRouteCanvas');
+                    if (canvas && canvas.width > 0 && canvas.height > 0) {
+                        drawCitiesAnimated('currentRouteCanvas', result.path);
+                    } else {
+                        console.error('[v0] Canvas not properly initialized, dimensions:', canvas.width, 'x', canvas.height);
+                        showNotification('Erreur d\'initialisation du canvas');
+                    }
+                }, 50);
+                
+                updateComparisonCharts();
+
+                showNotification('Algorithme terminé avec succès!');
+
+            } catch (error) {
+                console.error('[v0] Erreur lors de l\'exécution:', error);
+                showNotification(`Erreur: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            }
+        }
+
+        function switchComparisonTab(tab) {
+            document.querySelectorAll('.comparison-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.chart-container').forEach(c => c.classList.remove('active'));
+            
+            event.target.closest('.comparison-tab').classList.add('active');
+            document.getElementById(`chart-${tab}`).classList.add('active');
+        }
+
+        function updateComparisonCharts() {
+            const labels = {
+                'genetic-rank': 'Génétique (Rang)',
+                'genetic-roulette': 'Génétique (Roulette)',
+                'simulated-annealing': 'Recuit Simulé',
+                'tabu-search': 'Recherche Tabou'
+            };
+
+            const colors = {
+                'genetic-rank': '#FFD700',
+                'genetic-roulette': '#00BFFF',
+                'simulated-annealing': '#FF1493',
+                'tabu-search': '#00FF00'
+            };
+
+            const chartLabels = [];
+            const costData = [];
+            const timeData = [];
+            const chartColors = [];
+
+            Object.keys(algorithmResults).forEach(algoId => {
+                chartLabels.push(labels[algoId]);
+                costData.push(algorithmResults[algoId].cost);
+                timeData.push(parseFloat(algorithmResults[algoId].time));
+                chartColors.push(colors[algoId]);
+            });
+
+            // Cost Chart
+            if (comparisonChartCost) {
+                comparisonChartCost.destroy();
+            }
+
+            const ctxCost = document.getElementById('comparisonChartCost').getContext('2d');
+            comparisonChartCost = new Chart(ctxCost, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Coût Total (pixels)',
+                        data: costData,
+                        backgroundColor: chartColors,
+                        borderColor: chartColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#FFFFFF',
+                                font: { size: 14 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#FFFFFF' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#FFFFFF' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+
+            // Time Chart
+            if (comparisonChartTime) {
+                comparisonChartTime.destroy();
+            }
+
+            const ctxTime = document.getElementById('comparisonChartTime').getContext('2d');
+            comparisonChartTime = new Chart(ctxTime, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Temps d\'Exécution (ms)',
+                        data: timeData,
+                        backgroundColor: chartColors,
+                        borderColor: chartColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#FFFFFF',
+                                font: { size: 14 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#FFFFFF' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#FFFFFF' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportResults() {
+            if (Object.keys(algorithmResults).length === 0) {
+                showNotification('Aucun résultat à exporter!');
+                return;
+            }
+
+            let csv = 'Algorithme,Coût Total,Temps d\'Exécution (ms),Itérations\n';
+
+            const labels = {
+                'genetic-rank': 'Génétique (Rang)',
+                'genetic-roulette': 'Génétique (Roulette)',
+                'simulated-annealing': 'Recuit Simulé',
+                'tabu-search': 'Recherche Tabou'
+            };
+
+            Object.keys(algorithmResults).forEach(algoId => {
+                const result = algorithmResults[algoId];
+                csv += `${labels[algoId]},${result.cost.toFixed(2)},${result.time},${result.iterations}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tsp-results.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            showNotification('Résultats exportés en CSV!');
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            generateNewCities();
+        });
+    </script>
+</body>
+</html>
